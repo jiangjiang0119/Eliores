@@ -17,7 +17,6 @@
 
   /* 四个操作按钮（海浪点赞 / 气泡评论 / 漂流瓶 / 巡逻举报）的独立固定蓝，不随全局调色联动 */
   --act-blue: #4A7CE2;
-  --act-blue-line: rgba(139, 180, 255, 0.28);
   --act-blue-glow: rgba(127, 160, 255, 0.16);
   --bg-canvas: #F5F8FF;
   --card-white: rgba(255, 255, 255, 0.72);
@@ -536,8 +535,6 @@ body {
 }
 .grid-act-btn:active { transform: scale(0.92); }
 .grid-act-btn svg {
-  width: 13px;
-  height: 13px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.8;
@@ -558,7 +555,6 @@ body {
 }
 .grid-act-btn.liked {
   background: var(--act-blue);
-  border-color: var(--act-blue);
   color: #FFFFFF;
   box-shadow: 0 3px 9px var(--act-blue-glow);
 }
@@ -703,7 +699,7 @@ body {
   transition: all 0.18s var(--spring);
 }
 .c-mini-btn:active { transform: scale(0.92); }
-.c-mini-btn svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.c-mini-btn svg { stroke: currentColor; fill: none; stroke-width: 1.8; }
 .c-mini-btn.liked {
   background: var(--act-blue);
   border-color: var(--act-blue);
@@ -1311,7 +1307,6 @@ let posts = [
   {
     id: 'p1',
     islander: '岛民 #8842',
-    ticketTag: '公海慈善晚宴吃瓜人',
     hotBadge: '浅滩爆瓜',
     timeStr: '8分钟前登岛',
     zone: '白昼浅滩',
@@ -1341,7 +1336,6 @@ let posts = [
   {
     id: 'p2',
     islander: '岛民 #0119',
-    ticketTag: '失控边缘',
     hotBadge: '暗潮浪峰 TOP 1',
     timeStr: '19分钟前潜入',
     zone: '暗潮深潜',
@@ -1381,7 +1375,6 @@ let posts = [
   {
     id: 'p3',
     islander: '岛民 #7210',
-    ticketTag: '深海遗产清算师',
     hotBadge: '迷雾奇闻',
     timeStr: '36分钟前投瓶',
     zone: '迷雾礁区',
@@ -1407,7 +1400,6 @@ let posts = [
   {
     id: 'p4',
     islander: '岛民 #5039',
-    ticketTag: '熬夜打工人',
     hotBadge: '惊天社死',
     timeStr: '52分钟前登岛',
     zone: '白昼浅滩',
