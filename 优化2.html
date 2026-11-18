@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>暗光岛 · 潮汐终端（声呐坐标背景 + 前端完整合体版）</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+
+:root {
+  /* 与 #A9C7FF 声呐底图呼应的清透声呐色盘（可在右上角调色切换） */
+  --theme-main: #4A7CE2;
+  --theme-soft: rgba(169, 199, 255, 0.22);
+  --theme-line: rgba(139, 180, 255, 0.28);
+  --theme-glow: rgba(127, 160, 255, 0.16);
+  --accent-berry: #E11D48;
+
+  /* 四个操作按钮（海浪点赞 / 气泡评论 / 漂流瓶 / 巡逻举报）的独立固定蓝，不随全局调色联动 */
+  --act-blue: #4A7CE2;
+  --act-blue-glow: rgba(127, 160, 255, 0.16);
+  --bg-canvas: #F5F8FF;
+  --card-white: rgba(255, 255, 255, 0.72);
+  --ink-primary: #1E2532;
+  --ink-secondary: #4D586B;
+  --ink-light: #8996AB;
+  --sans-font: 'Plus Jakarta Sans', -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --serif-font: 'Noto Serif SC', 'Songti SC', serif;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 10px 6px;
+  background: #E9EFF8;
+  font-family: var(--sans-font);
+  color: var(--ink-primary);
+  -webkit-user-select: none;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 手机主容器 */
+.phone {
+  width: 100%;
+  max-width: 396px;
+  height: 800px;
+  margin: auto;
+  background: #FFFFFF;
+  border: 1.5px solid #FFFFFF;
+  border-radius: 14px;
+  box-shadow: 0 18px 42px -10px rgba(74, 124, 226, 0.15);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ================= 底层：双角 #A9C7FF 声呐 + 32°角慢速呼吸岛民坐标背景 ================= */
+.sonar-bg-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+
+.coord-num {
+  font-family: "SF Mono", "JetBrains Mono", "Courier New", monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.7px;
+  fill: #A9C7FF;
+  opacity: 0.22;
+  user-select: none;
+  animation: gentleDeepen 12s ease-in-out infinite;
+}
+
+@keyframes gentleDeepen {
+  0%, 100% {
+    fill: #A9C7FF;
+    opacity: 0.20;
+  }
+  50% {
+    fill: #5E90F0;
+    opacity: 0.68;
+  }
+}
+
+/* ================= 上层：前端界面（高透毛玻璃，透出底层声呐与坐标） ================= */
+.status-bar {
+  position: relative;
+  z-index: 5;
+  height: 28px;
+  padding: 6px 14px 0;
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-primary);
+  flex-shrink: 0;
+}
+
+.island-header {
+  position: relative;
+  z-index: 5;
+  padding: 6px 11px 8px;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--theme-line);
+  flex-shrink: 0;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-square-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--theme-main);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 #FFFFFF;
+  transition: all 0.18s var(--spring);
+}
+.nav-square-btn:active { transform: scale(0.91); }
+.nav-square-btn svg { width: 17px; height: 17px; }
+
+.island-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.island-coord {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  color: var(--theme-main);
+}
+.island-main-name {
+  font-family: var(--serif-font);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  letter-spacing: 0.3px;
+}
+
+.sonar-status-card {
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--theme-line);
+  color: var(--theme-main);
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 #FFFFFF;
+  transition: transform 0.18s var(--spring);
+  white-space: nowrap;
+}
+.sonar-status-card:active { transform: scale(0.94); }
+.sonar-dot {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 2px;
+  background: var(--theme-main);
+  box-shadow: 0 0 6px var(--theme-main);
+}
+
+/* 海事气象与防掉马声纹栏 */
+.ecology-telemetry {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 7px 10px 4px;
+  background: transparent;
+  flex-shrink: 0;
+}
+.tele-box {
+  padding: 5.5px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.66);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--theme-line);
+  box-shadow: inset 0 1px 0 #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+}
+.tele-label { font-size: 8.8px; color: var(--ink-light); }
+.tele-val { font-size: 10.2px; font-weight: 600; color: var(--ink-primary); white-space: nowrap; }
+.tele-val b { color: var(--theme-main); }
+
+/* 海域深度切换栏（平面渐变底 + 上边框3D浮雕纯白按钮） */
+.depth-tabs-bar {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin: 3px 10px 4px;
+  padding: 4.5px;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #EDF4FF 0%, #BBD6FF 33%, #6497F2 68%, #2753B8 100%);
+  border: none;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.depth-tab {
+  position: relative;
+  padding: 5.5px 2px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5px;
+  transition: transform 0.2s var(--spring), box-shadow 0.2s;
+}
+.depth-tab:active { transform: scale(0.94); }
+.depth-meter { font-size: 8px; font-weight: 600; font-family: monospace; }
+.depth-name  { font-size: 10.8px; font-weight: 600; }
+
+.depth-tab:nth-child(1) .depth-meter { color: #3B6FD4; opacity: 0.88; }
+.depth-tab:nth-child(1) .depth-name  { color: #1E3A8A; }
+
+.depth-tab:nth-child(2) .depth-meter,
+.depth-tab:nth-child(3) .depth-meter,
+.depth-tab:nth-child(4) .depth-meter {
+  color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 1px 2px rgba(30, 64, 175, 0.18);
+}
+.depth-tab:nth-child(2) .depth-name,
+.depth-tab:nth-child(3) .depth-name,
+.depth-tab:nth-child(4) .depth-name {
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(30, 64, 175, 0.22);
+}
+
+.depth-tab.active {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFFFFF 55%, #EEF5FF 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-top-color: rgba(130, 172, 248, 0.65);
+  border-right-color: rgba(145, 184, 250, 0.55);
+  box-shadow:
+    0 5px 12px -2px rgba(28, 64, 168, 0.34),
+    0 2px 4px -1px rgba(28, 64, 168, 0.18),
+    inset 0 2px 0 rgba(139, 180, 255, 0.42),
+    inset 0 -1.5px 0 #FFFFFF;
+  transform: translateY(-1px);
+}
+.depth-tab.active .depth-meter,
+.depth-tab.active .depth-name {
+  text-shadow: none;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  opacity: 1;
+}
+.depth-tab:nth-child(1).active .depth-meter,
+.depth-tab:nth-child(1).active .depth-name {
+  background-image: linear-gradient(90deg, #7AA7F8 0%, #5C8DF0 100%);
+}
+.depth-tab:nth-child(2).active .depth-meter,
+.depth-tab:nth-child(2).active .depth-name {
+  background-image: linear-gradient(90deg, #6396F2 0%, #467BE6 100%);
+}
+.depth-tab:nth-child(3).active .depth-meter,
+.depth-tab:nth-child(3).active .depth-name {
+  background-image: linear-gradient(90deg, #3E70DB 0%, #2653B8 100%);
+}
+.depth-tab:nth-child(4).active .depth-meter,
+.depth-tab:nth-child(4).active .depth-name {
+  background-image: linear-gradient(90deg, #2550B3 0%, #153485 100%);
+}
+
+/* 首页主滚动流 */
+.feed-viewport {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.feed-viewport::-webkit-scrollbar { width: 3px; }
+.feed-viewport::-webkit-scrollbar-thumb { background: var(--theme-line); border-radius: 6px; }
+
+/* 暗光岛生态广播条 */
+.island-broadcast-card {
+  margin: 0 10px 6px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border: 1px solid var(--theme-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  box-shadow: inset 0 1.5px 0 #FFFFFF;
+  cursor: pointer;
+}
+.bc-badge {
+  padding: 2.5px 6px;
+  border-radius: 6px;
+  background: rgba(234, 30, 32, 0.10);
+  color: #ea1e20;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bc-text {
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.bc-text-inner {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: bc-marquee 8s linear infinite;
+}
+@keyframes bc-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+.bc-depth-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ea1e20;
+  flex-shrink: 0;
+}
+
+/* 帖子主卡片：72%清透毛玻璃，让底下的声呐圈与岛民坐标隐隐透出 */
+.post-card {
+  background: var(--card-white);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border: 1px solid var(--theme-line);
+  border-radius: 10px;
+  padding: 11px 11px 10px;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+    0 6px 18px -4px rgba(34, 38, 48, 0.04),
+    0 2px 6px var(--theme-glow);
+  cursor: pointer;
+  transition: transform 0.16s ease;
+}
+.post-card:active { transform: scale(0.992); }
+
+.post-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(139, 180, 255, 0.18);
+}
+.islander-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sonar-avatar {
+  width: 31px;
+  height: 31px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--theme-soft) 0%, #FFFFFF 100%);
+  border: 1px solid var(--theme-line);
+  color: var(--theme-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 #FFFFFF;
+}
+.sonar-avatar svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+}
+
+.islander-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.islander-id-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.islander-id {
+  font-size: 11.8px;
+  font-weight: 700;
+  color: #f4c230;
+  margin-right: 1px;
+}
+.ticket-tag {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--theme-main);
+  background: var(--theme-soft);
+  padding: 1.5px 5.5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.hot-tide-tag {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-berry);
+  background: rgba(225, 29, 72, 0.08);
+  border: 1px solid rgba(225, 29, 72, 0.15);
+  padding: 1px 5.5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.sub-echo-info {
+  font-size: 9.2px;
+  color: var(--ink-light);
+}
+
+.zone-stamp {
+  padding: 3px 6.5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--theme-line);
+  text-align: right;
+  flex-shrink: 0;
+}
+.zone-stamp-name {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--theme-main);
+}
+.zone-stamp-depth {
+  display: block;
+  font-size: 8px;
+  font-family: monospace;
+  color: var(--ink-light);
+}
+
+.post-title {
+  font-family: var(--serif-font);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-primary);
+  line-height: 1.46;
+  margin-bottom: 5px;
+}
+.post-excerpt {
+  font-size: 11.6px;
+  color: var(--ink-secondary);
+  line-height: 1.66;
+  word-break: break-word;
+}
+
+.action-grid-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(139, 180, 255, 0.16);
+}
+.grid-act-btn {
+  height: 28px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--ink-secondary);
+  font-size: 10.2px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.18s var(--spring);
+}
+.grid-act-btn:active { transform: scale(0.92); }
+.grid-act-btn svg {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.grid-act-btn svg.wave-svg {
+  width: 15px;
+  height: 15px;
+}
+.c-mini-btn svg.wave-svg {
+  width: 13.5px;
+  height: 13.5px;
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.grid-act-btn.liked {
+  background: var(--act-blue);
+  color: #FFFFFF;
+  box-shadow: 0 3px 9px var(--act-blue-glow);
+}
+.wave-main { stroke: var(--act-blue); stroke-width: 1.7; fill: none; }
+.wave-foam { stroke: var(--act-blue); stroke-width: 1.7; fill: rgba(169, 199, 255, 0.32); }
+.wave-tint { stroke: none; fill: rgba(169, 199, 255, 0.38); }
+.wave-inner { stroke: #66A6FF; stroke-width: 1.55; fill: none; }
+.wave-bubble { stroke: #5A9CF8; stroke-width: 1.3; fill: none; }
+.liked .wave-foam { stroke: #FFFFFF; fill: #FFFFFF; }
+.liked .wave-tint { fill: rgba(255, 255, 255, 0.35); }
+.liked .wave-main,
+.liked .wave-inner,
+.liked .wave-bubble { stroke: #FFFFFF; fill: none; }
+
+/* ================= 详情页抽屉（半透磨砂，同样能透出底层的声呐与岛民坐标！） ================= */
+.detail-drawer {
+  position: absolute;
+  inset: 28px 0 0 0;
+  background: transparent;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.detail-drawer.open { transform: translateX(0); }
+
+/* 详情页打开时，隐藏首页主体内容，只保留全局声呐背景 + 状态栏；保留布局以维持首页滚动位置 */
+.phone.detail-open > .island-header,
+.phone.detail-open > .ecology-telemetry,
+.phone.detail-open > .island-broadcast-card,
+.phone.detail-open > .depth-tabs-bar,
+.phone.detail-open > .feed-viewport {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px 20px;
+}
+.detail-scroll::-webkit-scrollbar { width: 3px; }
+.detail-scroll::-webkit-scrollbar-thumb { background: var(--theme-line); border-radius: 6px; }
+
+.echo-reef-box {
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--theme-line);
+  border-radius: 10px;
+  padding: 11px 12px 6px;
+  box-shadow: inset 0 1.5px 0 #FFFFFF, 0 4px 14px rgba(34, 38, 48, 0.04);
+}
+.reef-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(139, 180, 255, 0.18);
+}
+.reef-head strong { font-size: 12px; color: var(--ink-primary); }
+.reef-head span {
+  font-size: 9.5px;
+  color: var(--theme-main);
+  background: var(--theme-soft);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.comment-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(139, 180, 255, 0.15);
+}
+.comment-item:last-child { border-bottom: none; }
+
+.c-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.c-user { display: flex; align-items: center; gap: 7px; }
+.c-ava-sm { width: 24px; height: 24px; border-radius: 6px; }
+.c-ava-sm svg { width: 13px; height: 13px; }
+.c-name { font-size: 11.2px; font-weight: 600; color: var(--ink-primary); }
+.c-floor {
+  font-size: 9.5px;
+  font-family: monospace;
+  color: var(--theme-main);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--theme-line);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.c-body {
+  font-size: 11.6px;
+  color: var(--ink-secondary);
+  line-height: 1.64;
+  padding-left: 31px;
+}
+
+.sub-reply-box {
+  margin: 6px 0 4px 31px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: rgba(245, 248, 255, 0.85);
+  border: 1px solid var(--theme-line);
+  font-size: 11px;
+  color: var(--ink-secondary);
+  line-height: 1.58;
+}
+.sub-reply-box b { color: var(--ink-primary); }
+.sub-reply-box b:first-child { color: #f4c230; }
+
+.c-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 31px;
+  margin-top: 6px;
+  font-size: 9.8px;
+  color: var(--ink-light);
+}
+.c-btn-group { display: flex; gap: 6px; }
+.c-mini-btn {
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-line);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink-secondary);
+  font-size: 9.8px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.18s var(--spring);
+}
+.c-mini-btn:active { transform: scale(0.92); }
+.c-mini-btn svg { stroke: currentColor; fill: none; stroke-width: 1.8; }
+.c-mini-btn.liked {
+  background: var(--act-blue);
+  border-color: var(--act-blue);
+  color: #FFFFFF;
+}
+
+.reply-bar {
+  padding: 8px 10px 12px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--theme-line);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.reply-input {
+  flex: 1;
+  height: 34px;
+  border: 1px solid var(--theme-line);
+  border-radius: 8px;
+  background: #FFFFFF;
+  padding: 0 10px;
+  font-size: 11.5px;
+  color: var(--ink-primary);
+  outline: none;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+.reply-send-btn {
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--theme-main);
+  color: #FFFFFF;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px var(--theme-glow);
+}
+
+/* ================= 弹窗系统 ================= */
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 37, 50, 0.24);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 60;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-mask.show { display: flex; }
+
+.modal-sheet {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid #FFFFFF;
+  border-radius: 12px 12px 0 0;
+  padding: 14px 14px 20px;
+  box-shadow: 0 -10px 30px rgba(30, 37, 50, 0.1);
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* 漂流瓶 / 巡逻举报 弹窗：居中显示 */
+.modal-mask.center-sheet { align-items: center; }
+.modal-mask.center-sheet .modal-sheet {
+  width: calc(100% - 28px);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(30, 37, 50, 0.18);
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn {
+  from { transform: translateY(24px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--theme-line);
+}
+.sheet-head-left { display: flex; flex-direction: column; gap: 2px; }
+.sheet-type-badge { font-size: 9px; font-weight: 700; color: var(--theme-main); letter-spacing: 0.5px; }
+.sheet-head strong { font-size: 13px; color: var(--ink-primary); }
+.close-sq-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--theme-line);
+  border-radius: 7px;
+  background: var(--bg-canvas);
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.report-cat-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.report-cat-btn {
+  padding: 6px 4px;
+  border-radius: 7px;
+  border: 1px solid var(--theme-line);
+  background: var(--bg-canvas);
+  color: var(--ink-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.report-cat-btn.active {
+  background: var(--theme-soft);
+  border-color: var(--theme-main);
+  color: var(--theme-main);
+}
+
+.report-opt-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 8.5px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--theme-line);
+  background: #FFFFFF;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+  cursor: pointer;
+}
+.report-opt-item.selected {
+  background: var(--theme-soft);
+  border-color: var(--theme-main);
+  color: var(--ink-primary);
+  font-weight: 600;
+}
+.sq-check {
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  border-radius: 4px;
+  border: 1.5px solid var(--theme-main);
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.report-opt-item.selected .sq-check {
+  background: var(--theme-main);
+  color: #FFFFFF;
+}
+.sq-check svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+.primary-full-btn {
+  width: 100%;
+  height: 36px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 8px;
+  background: var(--theme-main);
+  color: #FFFFFF;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--theme-glow);
+}
+
+.clean-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.clean-swatch-btn {
+  padding: 7px 4px;
+  border: 1px solid var(--theme-line);
+  border-radius: 8px;
+  background: var(--bg-canvas);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.swatch-block { width: 28px; height: 14px; border-radius: 4px; }
+.picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+}
+.picker-right { display: flex; align-items: center; gap: 6px; }
+.sq-color-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--theme-line);
+  border-radius: 7px;
+  padding: 2px;
+  background: #FFFFFF;
+  cursor: pointer;
+}
+.sq-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.sq-color-input::-webkit-color-swatch { border: none; border-radius: 5px; }
+.hex-box-input {
+  width: 80px;
+  height: 29px;
+  border: 1px solid var(--theme-line);
+  border-radius: 7px;
+  padding: 0 8px;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--ink-primary);
+  background: var(--bg-canvas);
+}
+
+.toast-box {
+  position: absolute;
+  top: 40px;
+  left: 14px;
+  right: 14px;
+  background: rgba(30, 37, 50, 0.92);
+  backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  box-shadow: 0 8px 20px rgba(30, 37, 50, 0.15);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: all 0.2s ease;
+  z-index: 90;
+}
+.toast-box.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="phone" id="phoneRoot">
+  <!-- 📡 底层：双角 #A9C7FF 声呐 + 32°角边缘裁断慢呼吸岛民坐标背景 -->
+  <svg class="sonar-bg-stage" id="sonarBgSvg" viewBox="0 0 396 800" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"></svg>
+
+  <!-- 状态栏 -->
+  <div class="status-bar">
+    <span>01:19</span>
+    <span>SONAR · 5G</span>
+  </div>
+
+  <!-- 顶部：暗光岛清透导航头 -->
+  <header class="island-header">
+    <div class="header-row">
+      <div class="head-left">
+        <button class="nav-square-btn" onclick="showToast('‹ 已收起声呐终端，返回手机桌面')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="island-title-box">
+          <span class="island-coord">DARK-LIGHT ARCHIPELAGO // 24°19'N</span>
+          <span class="island-main-name">暗光岛 · 潮汐终端</span>
+        </div>
+      </div>
+
+      <div class="sonar-status-card" onclick="openPaletteModal()">
+        <span class="sonar-dot"></span>
+        <span>4,892 潜航 · 调色</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 暗光岛生态：实时海事声呐与防熟人掉马状态栏 -->
+  <div class="ecology-telemetry">
+    <div class="tele-box">
+      <span class="tele-label">今夜潮汐浪高</span>
+      <span class="tele-val"><b>2.4m</b> 暗潮涌动</span>
+    </div>
+    <div class="tele-box">
+      <span class="tele-label">声纹混淆护盾</span>
+      <span class="tele-val"><b>99.8%</b> 防熟人</span>
+    </div>
+    <div class="tele-box">
+      <span class="tele-label">海事巡逻艇</span>
+      <span class="tele-val"><b>12艘</b> 在线执勤</span>
+    </div>
+  </div>
+
+  <!-- 海事声呐广播条 -->
+  <div class="island-broadcast-card" onclick="showToast('✦ 暗光岛海事广播：所有登岛船只均受深海迷雾协议保护')">
+    <span class="bc-badge">海事声呐广播</span>
+    <div class="bc-text">
+      <span class="bc-text-inner">今夜暗潮涌动，回声礁已开启「全员声纹混淆」与阅后焚毁保护</span>
+    </div>
+    <span class="bc-depth-tag">LIVE ✦</span>
+  </div>
+
+  <!-- 海域深度切换栏 -->
+  <div class="depth-tabs-bar" id="depthTabs">
+    <button class="depth-tab active" data-zone="all">
+      <span class="depth-meter">0m ~ -1200m</span>
+      <span class="depth-name">全域海域</span>
+    </button>
+    <button class="depth-tab" data-zone="白昼浅滩">
+      <span class="depth-meter">-15m SHOAL</span>
+      <span class="depth-name">白昼浅滩</span>
+    </button>
+    <button class="depth-tab" data-zone="暗潮深潜">
+      <span class="depth-meter">-400m ABYSS</span>
+      <span class="depth-name">暗潮深潜</span>
+    </button>
+    <button class="depth-tab" data-zone="迷雾礁区">
+      <span class="depth-meter">-1200m REEF</span>
+      <span class="depth-name">迷雾礁区</span>
+    </button>
+  </div>
+
+  <!-- 首页帖子流 -->
+  <main class="feed-viewport" id="feedViewport"></main>
+
+  <!-- 帖子详情与回声礁评论抽屉 -->
+  <section class="detail-drawer" id="detailDrawer">
+    <header class="island-header">
+      <div class="header-row">
+        <div class="head-left">
+          <button class="nav-square-btn" onclick="closeDetail()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="island-title-box">
+            <span class="island-coord" id="detailCoordText">SONAR DOSSIER</span>
+            <span class="island-main-name" id="detailHeaderTitle">海域卷宗详情</span>
+          </div>
+        </div>
+        <div class="sonar-status-card">
+          <span class="sonar-dot"></span>
+          <span>声呐加密中</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="detail-scroll" id="detailScroll"></div>
+
+    <div class="reply-bar">
+      <input type="text" class="reply-input" id="replyInput" placeholder="佩戴匿名声呐面具，向回声礁投递……">
+      <button class="reply-send-btn" onclick="sendComment()">投递回响</button>
+    </div>
+  </section>
+
+  <!-- 🚨 弹窗1：暗光岛海事局 · 分类举报弹窗 -->
+  <div class="modal-mask center-sheet" id="reportModal" onclick="if(event.target===this)closeReportModal()">
+    <div class="modal-sheet">
+      <div class="sheet-head">
+        <div class="sheet-head-left">
+          <span class="sheet-type-badge" id="reportTypeBadge">MARITIME PATROL // 主帖纠察</span>
+          <strong id="reportModalTitle">向暗光岛海事局提交举报</strong>
+        </div>
+        <button class="close-sq-btn" onclick="closeReportModal()">✕</button>
+      </div>
+
+      <div class="report-cat-tabs" id="reportCatTabs"></div>
+      <div id="reportOptionsList"></div>
+
+      <button class="primary-full-btn" onclick="submitReportConfirm()">
+        呼叫海事巡逻艇 · 发射声呐警告
+      </button>
+    </div>
+  </div>
+
+  <!-- 🔗 弹窗2：漂流瓶加密坐标分享 -->
+  <div class="modal-mask center-sheet" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+    <div class="modal-sheet">
+      <div class="sheet-head">
+        <div class="sheet-head-left">
+          <span class="sheet-type-badge">DRIFT BOTTLE // 阅后混淆短链</span>
+          <strong>封装暗光岛漂流瓶坐标</strong>
+        </div>
+        <button class="close-sq-btn" onclick="closeShareModal()">✕</button>
+      </div>
+      <div style="font-size:11px; color:var(--ink-light); margin-bottom:6px;">该海讯已剥离真实IP与船籍尾号，离岛后链接自动失效：</div>
+      <div class="sub-reply-box" id="shareUrlBox" style="margin:0 0 12px 0; font-family:monospace; word-break:break-all;"></div>
+      <button class="primary-full-btn" onclick="copyShareLink()">一键复制漂流瓶加密链接</button>
+    </div>
+  </div>
+
+  <!-- 🎨 弹窗3：清透高净度色盘定制 -->
+  <div class="modal-mask" id="paletteModal" onclick="if(event.target===this)closePaletteModal()">
+    <div class="modal-sheet">
+      <div class="sheet-head">
+        <div class="sheet-head-left">
+          <span class="sheet-type-badge">CRYSTAL PALETTE // 清透声呐色盘</span>
+          <strong>定制你的暗光岛清透主题色</strong>
+        </div>
+        <button class="close-sq-btn" onclick="closePaletteModal()">✕</button>
+      </div>
+      <div class="clean-swatches">
+        <button class="clean-swatch-btn" onclick="setCleanTheme('#4A7CE2','rgba(169,199,255,0.22)')">
+          <span class="swatch-block" style="background:#A9C7FF"></span>
+          <span>声呐冰蓝</span>
+        </button>
+        <button class="clean-swatch-btn" onclick="setCleanTheme('#841A2D','rgba(132,26,45,0.08)')">
+          <span class="swatch-block" style="background:#841A2D"></span>
+          <span>冷雾檀绛</span>
+        </button>
+        <button class="clean-swatch-btn" onclick="setCleanTheme('#B4234E','rgba(180,35,78,0.08)')">
+          <span class="swatch-block" style="background:#B4234E"></span>
+          <span>冰透山茶</span>
+        </button>
+        <button class="clean-swatch-btn" onclick="setCleanTheme('#475569','rgba(71,85,105,0.08)')">
+          <span class="swatch-block" style="background:#475569"></span>
+          <span>极昼钛银</span>
+        </button>
+      </div>
+      <div class="picker-row">
+        <span>清透主色 (文字/高亮/声呐)</span>
+        <div class="picker-right">
+          <input type="color" class="sq-color-input" id="colorPickerInput" value="#4A7CE2" oninput="onPickColor(this.value)">
+          <input type="text" class="hex-box-input" id="colorHexInput" value="#4A7CE2" oninput="onInputHex(this.value)">
+        </div>
+      </div>
+      <button class="primary-full-btn" onclick="closePaletteModal()">保存清透配色</button>
+    </div>
+  </div>
+
+  <div class="toast-box" id="toastBox"></div>
+</div>
+
+<script>
+/* =========================================================================
+   1. 渲染底层：双角 #A9C7FF 声呐 + 32°角边缘裁断慢呼吸岛民坐标背景
+   ========================================================================= */
+function renderSonarBackground() {
+  const svg = document.getElementById('sonarBgSvg');
+  const ANGLE = -32;
+  const COLOR = "#A9C7FF";
+  const STROKE_COLOR = "#8BB4FF";
+
+  const topRight = { cx: 360, cy: 38 };
+  const botLeft  = { cx: 36,  cy: 762 };
+
+  const COORDS = [
+    // 顶部边缘裁断
+    { x: 68,  y: 34,  text: "24°21'16.2\"N  118°01'33.5\"E", delay: "-1.5s" },
+    { x: 225, y: 54,  text: "24°20'44.8\"N  118°03'19.0\"E", delay: "-7.2s" },
+
+    // 左侧边缘裁断
+    { x: -52, y: 155, text: "24°19'08.4\"N  118°04'52.1\"E", delay: "0s" },
+    { x: -44, y: 425, text: "24°17'51.9\"N  118°06'28.4\"E", delay: "-5.4s" },
+    { x: -58, y: 635, text: "24°16'12.3\"N  118°08'05.7\"E", delay: "-9.8s" },
+
+    // 中部海域自然散布的岛民坐标
+    { x: 82,  y: 210, text: "24°19'32.0\"N  118°04'11.6\"E", delay: "-3.8s" },
+    { x: 162, y: 315, text: "24°18'41.2\"N  118°05'19.0\"E", delay: "-8.6s" },
+    { x: 64,  y: 390, text: "24°18'09.7\"N  118°05'47.3\"E", delay: "-2.3s" },
+    { x: 158, y: 505, text: "24°17'29.6\"N  118°06'04.3\"E", delay: "-6.5s" },
+    { x: 74,  y: 605, text: "24°16'55.1\"N  118°07'22.9\"E", delay: "-10.7s" },
+
+    // 右侧边缘裁断
+    { x: 292, y: 255, text: "24°19'55.0\"N  118°03'11.8\"E", delay: "-4.5s" },
+    { x: 302, y: 475, text: "24°17'04.5\"N  118°06'51.2\"E", delay: "-1.1s" },
+    { x: 286, y: 685, text: "24°15'38.9\"N  118°09'14.6\"E", delay: "-8.0s" },
+
+    // 底部边缘裁断
+    { x: 58,  y: 822, text: "24°15'19.4\"N  118°08'40.2\"E", delay: "-3.1s" },
+    { x: 198, y: 830, text: "24°14'52.7\"N  118°09'58.1\"E", delay: "-6.9s" }
+  ];
+
+  let h = `
+    <defs>
+      <radialGradient id="sonarBlueHalo" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#7FA0FF" stop-opacity="0.52"/>
+        <stop offset="32%"  stop-color="${COLOR}" stop-opacity="0.36"/>
+        <stop offset="68%"  stop-color="${COLOR}" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <rect width="396" height="800" fill="#FFFFFF"/>
+
+    <circle cx="${topRight.cx}" cy="${topRight.cy}" r="285" fill="url(#sonarBlueHalo)"/>
+    <circle cx="${botLeft.cx}"  cy="${botLeft.cy}"  r="285" fill="url(#sonarBlueHalo)"/>
+  `;
+
+  for (let r = 9, i = 1; r <= 510; r += 9, i++) {
+    const isMajor = i % 6 === 0;
+    const sw = isMajor ? 0.95 : 0.55;
+    const fade = r > 410 ? Math.max(0.25, 1 - (r - 410) / 120) : 1;
+    const op = ((isMajor ? 0.38 : 0.18) * fade).toFixed(3);
+    const dash = (i % 8 === 0) ? `stroke-dasharray="4 3"` : ``;
+    h += `<circle cx="${topRight.cx}" cy="${topRight.cy}" r="${r}" stroke="${STROKE_COLOR}" stroke-width="${sw}" stroke-opacity="${op}" ${dash}/>`;
+    h += `<circle cx="${botLeft.cx}"  cy="${botLeft.cy}"  r="${r}" stroke="${STROKE_COLOR}" stroke-width="${sw}" stroke-opacity="${op}" ${dash}/>`;
+  }
+
+  h += `
+    <circle cx="${topRight.cx}" cy="${topRight.cy}" r="2.5" fill="#7FA0FF" fill-opacity="0.75"/>
+    <circle cx="${botLeft.cx}"  cy="${botLeft.cy}"  r="2.5" fill="#7FA0FF" fill-opacity="0.75"/>
+  `;
+
+  COORDS.forEach(c => {
+    h += `
+      <g transform="translate(${c.x}, ${c.y}) rotate(${ANGLE})">
+        <text class="coord-num" style="animation-delay: ${c.delay};">${c.text}</text>
+      </g>
+    `;
+  });
+
+  svg.innerHTML = h;
+}
+
+/* =========================================================================
+   2. 前端论坛数据与交互逻辑（文字内容100%完整保留）
+   ========================================================================= */
+const AVATAR_SVGS = {
+  compass: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>`,
+  starfish: `<svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/><circle cx="12" cy="12" r="3"/></svg>`,
+  tide: `<svg viewBox="0 0 24 24"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>`
+};
+
+const UI_ICONS = {
+waveLike: `<svg class="wave-svg" viewBox="0 0 24 24"><circle class="wave-bubble" cx="3.3" cy="4.8" r="1.65"/><circle class="wave-bubble" cx="19.6" cy="2.5" r="1.5"/><path class="wave-foam" d="M4.2 13.8C5 8 9.8 5.2 15.2 5.8C18.6 6.2 21 8.2 20.4 10.8C19.8 12.8 17 13.2 15.4 11.5C14 12.8 11.4 12.6 10 10.8C7.8 10.4 5.5 11.6 4.2 13.8Z"/><path class="wave-main" d="M4.2 13.8C3.4 18.5 6.8 22 12.2 21.8C15.8 21.6 18.2 19.8 21.4 20.6"/><path class="wave-inner" d="M8.6 10.9C6.8 14.4 8.4 18.4 12.8 18.2C16 18 18.4 16.4 21.2 17.2"/><path class="wave-inner" d="M12.5 12.2C12.2 14.4 14.5 15.2 18.6 14.5"/></svg>`,
+
+  echoComment: `<svg class="wave-svg" viewBox="0 0 24 24"><circle class="wave-bubble" cx="3.2" cy="4.8" r="1.5"/><path class="wave-tint" d="M3.6 14C4.5 17.5 7.8 19.8 11.6 19.8C15.4 19.8 18.6 17.5 19.6 14C16.8 15.2 14.2 15.6 11.6 15.6C9 15.6 6.4 15.2 3.6 14Z"/><path class="wave-main" d="M14.8 5.7C13.8 5.4 12.7 5.2 11.6 5.2C6.8 5.2 3 8.5 3 12.6C3 14.5 3.8 16.2 5.2 17.5C4.8 18.8 3.9 19.9 3.2 20.6C4.8 20.7 6.5 20.1 7.6 19.3C8.8 19.8 10.2 20 11.6 20C16.4 20 20.2 16.7 20.2 12.6C20.2 11.7 20 10.8 19.7 10"/><path class="wave-inner" d="M6.8 12V13.4"/><path class="wave-inner" d="M9.2 10.4V15"/><path class="wave-main" d="M11.6 8.8V16.4"/><path class="wave-inner" d="M14 10.4V15"/><path class="wave-inner" d="M16.4 12V13.4"/><path class="wave-inner" d="M17.8 4.3C19.8 5.4 21.1 7 21.5 9"/><path class="wave-main" d="M19.9 2.4C22.1 3.6 23.5 5.5 23.9 7.8"/></svg>`,
+  bottleShare: `<svg class="wave-svg" viewBox="0 0 24 24"><circle class="wave-bubble" cx="10.2" cy="3.8" r="1.5"/><path class="wave-foam" style="stroke-width:1.3" d="M4.3 6.2L5.1 7.9L6.9 8.2L5.6 9.5L5.9 11.3L4.3 10.4L2.7 11.3L3 9.5L1.7 8.2L3.5 7.9Z"/><path class="wave-tint" d="M2 19.2C4.8 17.8 8.4 18 11.8 19.2C14.8 20.2 17.8 19.8 20.4 18.6C18.2 21.4 13.8 22.5 9 22.2C5.2 22 2.8 20.8 2 19.2Z"/><path class="wave-inner" d="M2 19.3C5 18 8.4 18.2 11.8 19.3C14.8 20.3 17.8 19.9 20.4 18.7"/><g transform="rotate(-30 13.5 12)"><path class="wave-main" style="fill:rgba(169,199,255,0.28)" d="M3.6 10.6H6.2V13.8H3.6C2.9 13.8 2.5 13.1 2.5 12.2C2.5 11.3 2.9 10.6 3.6 10.6Z"/><path class="wave-foam" d="M6.2 10.2H8.6C9.8 10.2 10.8 7.5 13.4 7.5H19.2C21.4 7.5 22.5 9.4 22.5 12.2C22.5 15 21.4 16.9 19.2 16.9H13.4C10.8 16.9 9.8 14.2 8.6 14.2H6.2Z"/><path class="wave-main" d="M6.2 9.6V14.8"/><rect style="stroke:var(--act-blue);stroke-width:1.25;fill:#FFFFFF" x="11.2" y="9.8" width="8.4" height="4.8" rx="1.8"/><path class="wave-inner" d="M15.4 9.8V14.6M13.8 12.2H17"/></g></svg>`,
+  patrolReport: `<svg class="wave-svg" viewBox="0 0 24 24"><circle class="wave-bubble" cx="3.2" cy="4.5" r="1.45"/><path style="stroke:#F43F5E;stroke-width:1.6;fill:none" d="M12 1.6V3.9M6.8 3.2L8.2 5M17.2 3.2L15.8 5M3.8 7.3L5.8 8.3M20.2 7.3L18.2 8.3"/><path class="wave-tint" d="M6.5 13C8.2 14 10 14.4 12 14.4C14 14.4 15.8 14 17.5 13V16.2H6.5Z"/><path class="wave-main" d="M6.4 16.2V11.4C6.4 8.1 8.9 5.6 12 5.6C15.1 5.6 17.6 8.1 17.6 11.4V16.2"/><path style="stroke:#F43F5E;stroke-width:1.5;fill:rgba(244,63,94,0.3)" d="M9.6 16.2V11.5C9.6 10 10.7 8.8 12 8.8C13.3 8.8 14.4 10 14.4 11.5V16.2Z"/><rect class="wave-foam" x="4.8" y="16.2" width="14.4" height="2.2" rx="1.1"/><path class="wave-tint" d="M2.2 20.2C5.4 19 9 19.2 12.4 20.2C15.6 21.1 18.6 20.8 21.4 19.6C19.2 22.3 14.8 23.3 9.8 23.1C5.6 22.9 3 21.7 2.2 20.2Z"/><path class="wave-inner" d="M2.2 20.3C5.4 19.1 9 19.3 12.4 20.3C15.6 21.2 18.6 20.9 21.4 19.7"/></svg>`,
+  check: `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`
+};
+
+const REPORT_DATA = {
+  post: {
+    badge: "MARITIME PATROL // 海域主帖纠察",
+    categories: [
+      {
+        name: "【海事信誉类】",
+        items: [
+          "海啸级假瓜：疑似编造离谱海讯骗取浪花共鸣，申请调取声呐黑匣子验真",
+          "二手漂流瓶：把三年前陈年旧瓜重新抛光投海，浪费本岛民潜水氧气",
+          "钓鱼执法船：标题写得惊天动地，点进来居然断更卡在一半不讲武德"
+        ]
+      },
+      {
+        name: "【风浪尺度类】",
+        items: [
+          "海域越界超速：风浪尺度过大，建议海事局用拖船将其强制拽入暗潮深潜区",
+          "致幻海藻投喂：深夜高浓度散发恋爱酸雾或凡尔赛信号，严重干扰单身潜艇声呐",
+          "深海高压预警：内容过于刺激烧脑，导致本岛民大晚上在被窝里瞳孔地震"
+        ]
+      },
+      {
+        name: "【岛民秩序类】",
+        items: [
+          "精准掉马风险：细节描写过于逼真，现实里的熟人已经在拿望远镜对号入座了",
+          "危险暗礁坐标：涉及现实名利场核心机密，建议投放迷雾浮标进行二级遮蔽",
+          "违规私发船票：疑似在帖子里暗中招揽私密小船队，破坏暗光岛独行侠生态"
+        ]
+      }
+    ]
+  },
+  comment: {
+    badge: "ECHO REEF PATROL // 回声礁评论纠察",
+    categories: [
+      {
+        name: "【回声礁拱火】",
+        items: [
+          "乱扔深水炸弹：在评论区看热闹不嫌事大，试图撺掇楼主干出冲动大事",
+          "反向开香槟：全礁岛民都在认真帮楼主支招，就层主在旁边疯狂幸灾乐祸",
+          "声呐噪音污染：复读机式刷屏“哈哈哈哈”，把前排正经吃瓜课代表都冲散了"
+        ]
+      },
+      {
+        name: "【信号串频歪楼】",
+        items: [
+          "严重偏离航线：本来在聊主帖的惊天大瓜，结果被层主硬生生带偏去聊夜宵吃啥",
+          "海鸥式抢食：在回声礁混水摸鱼求私信、求排雷、求认识，破坏高冷潜航队形",
+          "海妖塞壬附体：评论区发言过于虎狼之词，比主帖车速还快，巡逻艇声呐已震碎"
+        ]
+      },
+      {
+        name: "【匿名公约违规】",
+        items: [
+          "贴脸开探照灯：试图在评论区顺藤摸瓜扒皮楼主真实船籍，违反《暗光岛匿名公约》",
+          "熟人雷达滴滴响：层主语气太像当事人本尊或身边知情人，看得人后背发凉",
+          "乱认海王亲戚：动不动在评论区乱认老乡和熟人，请保持安全潜水社交距离"
+        ]
+      }
+    ]
+  }
+};
+
+let posts = [
+  {
+    id: 'p1',
+    islander: '岛民 #8842',
+    hotBadge: '浅滩爆瓜',
+    timeStr: '8分钟前登岛',
+    zone: '白昼浅滩',
+    depth: '-15m SHOAL',
+    ava: 'compass',
+    sonarRate: '99.4% 声纹已加密',
+    title: '【惊天抓马】今晚公海邮轮慈善晚宴笑疯我了，两位死对头豪门千金为了抢一只古董怀表差点把拍卖师锤子撅了',
+    content: '刚从公海“星辰号”慈善拍卖晚宴溜出来透气，手都在抖，第一时间登岛给各位岛民直播！\n\n今晚压轴拍品是一只十九世纪的百达翡丽珐琅怀表。本来起拍价三百万很正常，结果城南做航运的林家二小姐刚举牌，她死对头——城北做珠宝的苏家大小姐立刻冷笑一声直接加价五百万！\n\n最绝的来了！！你们猜她们为什么抢这块男士怀表？因为她们俩上个月同时发现，自己养的那个超模小狼狗男朋友居然是同一个人！今晚那个渣男本来还想混进晚宴端水，结果被两个姐姐联手叫保安扔进了邮轮底舱洗盘子。现在林小姐和苏小姐已经喝高了，俩人根本不是为了男人抢表，纯粹是为了争一口气看谁零花钱多，直接把怀表拍到了三千八百万，拍卖师大叔擦汗的手帕都湿透三条了……',
+    likes: 3420,
+    liked: false,
+    comments: [
+      {
+        id: 'p1_c1', islander: '岛民 #4102', ava: 'tide', time: '6分钟前', likes: 812, liked: false,
+        text: '救命哈哈哈哈哈哈！把时间管理大师渣男扔进底舱洗盘子，然后两个富婆姐姐在上面砸三千八百万斗气？？这是什么爽文照进现实，建议两位姐姐直接原地结拜！',
+        sub: { from: '岛民 #8842', to: '岛民 #4102', text: '最新战报：怀表被苏大小姐拍下了，她当场把表扔进香槟塔里听了个响，现在正搂着林二小姐去甲板点男模呢！' }
+      },
+      {
+        id: 'p1_c2', islander: '岛民 #9033', ava: 'starfish', time: '4分钟前', likes: 530, liked: false,
+        text: '拍卖师大叔：我这一生如履薄冰，锤子敲得火星子都冒出来了。不过有一说一，那个超模小狼狗是不是姓季？上周我还在迷雾礁区看到有人挂他同时脚踏三条船！'
+      },
+      {
+        id: 'p1_c3', islander: '岛民 #2198', ava: 'compass', time: '2分钟前', likes: 289, liked: false,
+        text: '这就是我每天半夜蹲守暗光岛白昼浅滩的理由！普通人的抓马费眼泪，顶豪千金的抓马只费拍卖师的汗巾！'
+      }
+    ]
+  },
+  {
+    id: 'p2',
+    islander: '岛民 #0119',
+    hotBadge: '暗潮浪峰 TOP 1',
+    timeStr: '19分钟前潜入',
+    zone: '暗潮深潜',
+    depth: '-400m ABYSS',
+    ava: 'starfish',
+    sonarRate: '99.9% 特级声纹遮蔽',
+    title: '【求助】太太刚做完检查需要禁欲静养，却毫无自觉地穿着真丝睡裙在我怀里乱蹭，快忍出内伤了怎么办',
+    content: '现实里没人敢问，登岛求个支招。\n\n太太今天刚去医院做完无痛胃肠镜，顺便钳除了一颗6mm的小息肉。医生交代这几天肠胃黏膜有微创面，需要清淡温软饮食，更不能在床上剧烈折腾。\n\n结果晚上洗完澡，她自己换了那件连扣子都没有的真丝吊带睡裙，说麻药退了肚子有点胀气，非要钻进我怀里让我用温热的手掌帮她揉右上腹。\n\n她皮肤本来就白得晃眼，前天夜里被我按在落地窗前留下的大腿内侧咬痕还没彻底消退，现在一边哼唧着说疼，一边毫无防备地拿小腿肚往我西装裤上蹭。\n\n我已经去浴室冲过两次冷水了，小腹绷得快要炸开，偏偏她还仰着脸问我为什么手心烫得像火炉。请问各位岛民，在不碰伤她肠胃的前提下，怎么让她在不动真格的情况下帮我稍微纾解一点，又不会把她吓哭？',
+    likes: 5820,
+    liked: false,
+    comments: [
+      {
+        id: 'p2_c1', islander: '岛民 #3091', ava: 'compass', time: '17分钟前', likes: 942, liked: false,
+        text: '草？？？我潜水镜都戴好了准备看暗潮区教学，结果你给我看顶级纯爱战神憋成忍者神龟？？“前天夜里按在落地窗前留下的大腿内侧咬痕还没消”——哥你平时在床上到底是多疯批啊！！',
+        sub: { from: '岛民 #0119', to: '岛民 #3091', text: '平时她受得住。只是今天刚取了活检和息肉，不能乱来。' }
+      },
+      {
+        id: 'p2_c2', islander: '岛民 #6612', ava: 'tide', time: '15分钟前', likes: 618, liked: false,
+        text: '暗潮区诚不我欺！既然不能真枪实弹折腾她肚子，哥你不会用腿吗？！或者握着她的手、吻着她的耳垂在真丝睡裙外面蹭啊！她都主动拿小腿蹭你西装裤了，明显也是吃定你不敢动她故意勾引你呢！',
+        sub: { from: '岛民 #0119', to: '岛民 #6612', text: '她手腕昨天改代码改酸了，舍不得累着她的手。不过腿间和耳垂的建议很实用，已经在试了。' }
+      },
+      {
+        id: 'p2_c3', islander: '岛民 #1904', ava: 'starfish', time: '12分钟前', likes: 405, liked: false,
+        text: '救命，做完胃肠镜+息肉钳除确实不能增加腹压！楼主居然忍得住去冲两次冷水还乖乖给她揉右上腹排气，这他妈是什么绝世极品好老公，我直接发出鸡叫！'
+      },
+      {
+        id: 'p2_c4', islander: '岛民 #5520', ava: 'compass', time: '6分钟前', likes: 276, liked: false,
+        text: '“已经在试了”五个字信息量太大了！！所以楼主现在是一边单手拿手机回帖，一边把嫂子按在怀里亲耳垂蹭大腿吗？！',
+        sub: { from: '岛民 #0119', to: '岛民 #5520', text: '她耳根红透了，正在咬我肩膀不让我看手机。先离岛了，七天后再算总账。' }
+      },
+      {
+        id: 'p2_c5', islander: '岛民 #4409', ava: 'tide', time: '3分钟前', likes: 195, liked: false,
+        text: '“七天后再算总账”……提前替嫂子默哀三秒钟，七天黏膜长好之后怕是三天三夜下不了船了！'
+      }
+    ]
+  },
+  {
+    id: 'p3',
+    islander: '岛民 #7210',
+    hotBadge: '迷雾奇闻',
+    timeStr: '36分钟前投瓶',
+    zone: '迷雾礁区',
+    depth: '-1200m REEF',
+    ava: 'tide',
+    sonarRate: '99.7% 坐标已抹除',
+    title: '干我们「私人遗产清算师」这一行的，今天在一艘停泊十年的废弃游艇暗格里开出了最诡异的一份遗嘱',
+    content: '入行八年，专门帮一些不方便走明面公证的隐秘家族清点海上资产。今天接到委托，去清理一艘在私人船坞停靠了整整十年的复古三层游艇。\n\n委托人是一位九十岁去世的老航海家。按照他留下的声呐密码，我在主舱书房的柚木地板下面打开了一个恒温钛合金保险箱。里面没有金条也没有股权书，只有三十六只贴着年份标签的深海漂流瓶，和一封写给“第37位打开暗格的人”的信。\n\n信上只有一句话：“如果你没有在午夜十二点听到甲板上传来高跟鞋跳舞的声音，请立刻把第三十六只瓶子扔进海里，千万不要拆开火漆；如果你听到了，请替我向她问好。”\n\n现在距离午夜十二点还有十一分钟，而我刚才清点了一遍，保险箱里只有三十五只瓶子……第36只瓶子到底去哪了？',
+    likes: 2890,
+    liked: false,
+    comments: [
+      {
+        id: 'p3_c1', islander: '岛民 #1108', ava: 'starfish', time: '30分钟前', likes: 620, liked: false,
+        text: '大晚上看迷雾礁区看得我汗毛倒立！！只有35只瓶子，岂不是说明在你之前已经有“第36个人”把瓶子拿走了？！楼主快下船啊别待在书房里了！',
+        sub: { from: '岛民 #7210', to: '岛民 #1108', text: '刚问了船坞守门的老大爷，这艘船十年间真的没有任何人登船，但刚才甲板上好像真的有高跟鞋踩过木板的声音……' }
+      },
+      {
+        id: 'p3_c2', islander: '岛民 #6380', ava: 'compass', time: '21分钟前', likes: 340, liked: false,
+        text: '盲猜一波浪漫反转：说不定老航海家年轻时爱上一位常年住在海岛上的神秘女士，第36只瓶子早就顺着洋流寄给那位女士了，甲板上的高跟鞋声是老太太今晚雇了乐队来游艇纪念他！'
+      }
+    ]
+  },
+  {
+    id: 'p4',
+    islander: '岛民 #5039',
+    hotBadge: '惊天社死',
+    timeStr: '52分钟前登岛',
+    zone: '白昼浅滩',
+    depth: '-15m SHOAL',
+    ava: 'compass',
+    sonarRate: '98.9% 声纹已加密',
+    title: '救命！！在暗光岛匿名匹配「深夜声呐连麦」吐槽我那吹毛求疵的魔鬼女上司，结果对面沉默三秒后忘开变声器了……',
+    content: '我现在正在连夜打包行李准备逃往外星球！！\n\n事情是这样的，我们设计院新空降了一位冷面总监姐姐，长得跟高岭之花一样美，但审图极其严酷，今天下午把我画了三天的方案批得体无完肤。我晚上越想越委屈，就点开了暗光岛的「深海盲盒连麦」，想找个陌生岛民大吐苦水。\n\n一连上麦，我就竹筒倒豆子一样狂喷：“你们不知道我们那个新来的林总监有多龟毛！连6px和8px的圆角都要拿放大镜看！虽然她今天喷的冷冽雪松香水很好闻，腿也很长，但她简直是没有感情的审图机器！”\n\n对面一直安安静静地听我骂了五分钟，连呼吸声都特别轻。直到我骂累了问对面怎么不说话，对面突然传来一声熟悉的轻笑——她居然没开岛上的海妖变声器！！用她那把清冷好听的御姐原音慢悠悠地说：“原来你喜欢我今天喷的雪松香？那明天早上九点，带着改好8px圆角的方案来我办公室再闻闻。”',
+    likes: 4150,
+    liked: false,
+    comments: [
+      {
+        id: 'p4_c1', islander: '岛民 #7741', ava: 'tide', time: '45分钟前', likes: 1120, liked: false,
+        text: '哈哈哈哈哈哈哈哈哈哈！！本来以为是职场惊悚片，怎么最后一句突然变成了冷面御姐上司×傲娇下属的破镜重圆（不是）拉扯文学？！“来我办公室再闻闻”——她绝对是在撩你吧！！',
+        sub: { from: '岛民 #5039', to: '岛民 #7741', text: '别说了，我现在手抖得连鼠标都握不稳，到底是连夜改方案还是连夜写辞职信啊呜呜呜！' }
+      },
+      {
+        id: 'p4_c2', islander: '岛民 #3319', ava: 'starfish', time: '38分钟前', likes: 685, liked: false,
+        text: '重点难道不是“6px和8px的圆角确实天差地别”吗？林总监审美很在线啊！而且你骂她的时候还顺嘴夸她香水好闻腿很长，怪不得人家不扣你绩效哈哈哈哈！'
+      }
+    ]
+  }
+];
+
+let currentZone = 'all';
+let activePostId = null;
+let reportMode = 'post';
+let reportCatIdx = 0;
+let reportOptIdx = 0;
+let reportTargetName = '';
+
+function showToast(msg) {
+  const el = document.getElementById('toastBox');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function renderFeed() {
+  const box = document.getElementById('feedViewport');
+  const filtered = posts.filter(p => currentZone === 'all' || p.zone === currentZone);
+
+  const cardsHtml = filtered.map(p => {
+    const shortText = p.content.length > 96 ? p.content.slice(0, 96) + '……' : p.content;
+    return `
+      <article class="post-card" onclick="openDetail('${p.id}')">
+        <div class="post-head">
+          <div class="islander-left">
+            <div class="sonar-avatar">${AVATAR_SVGS[p.ava]}</div>
+            <div class="islander-meta">
+              <div class="islander-id-line">
+                <span class="islander-id">${p.islander}</span>
+                <span class="hot-tide-tag">${p.hotBadge}</span>
+              </div>
+              <span class="sub-echo-info">${p.timeStr} · ${p.sonarRate}</span>
+            </div>
+          </div>
+          <div class="zone-stamp">
+            <span class="zone-stamp-name">${p.zone}</span>
+            <span class="zone-stamp-depth">${p.depth}</span>
+          </div>
+        </div>
+
+        <div class="post-title">${p.title}</div>
+        <div class="post-excerpt">${shortText}</div>
+
+        <div class="action-grid-bar" onclick="event.stopPropagation()">
+          <button class="grid-act-btn ${p.liked ? 'liked' : ''}" onclick="togglePostLike('${p.id}')">
+            ${UI_ICONS.waveLike}
+            <span>${p.likes}</span>
+          </button>
+          <button class="grid-act-btn" onclick="openDetail('${p.id}')">
+            ${UI_ICONS.echoComment}
+            <span>${p.comments.length}</span>
+          </button>
+          <button class="grid-act-btn" onclick="openShareModal('${p.id}')">
+            ${UI_ICONS.bottleShare}
+            <span>漂流瓶</span>
+          </button>
+          <button class="grid-act-btn" onclick="openReportModal('post', '${p.islander} 的主帖')">
+            ${UI_ICONS.patrolReport}
+            <span>巡逻举报</span>
+          </button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  box.innerHTML = cardsHtml;
+}
+
+function togglePostLike(pid) {
+  const p = posts.find(x => x.id === pid);
+  if (!p) return;
+  p.liked = !p.liked;
+  p.likes += p.liked ? 1 : -1;
+  renderFeed();
+  if (activePostId === pid) renderDetailContent();
+}
+
+function toggleCommentLike(pid, cid) {
+  const p = posts.find(x => x.id === pid);
+  const c = p?.comments?.find(x => x.id === cid);
+  if (!c) return;
+  c.liked = !c.liked;
+  c.likes += c.liked ? 1 : -1;
+  renderDetailContent();
+}
+
+function openDetail(pid) {
+  activePostId = pid;
+  const p = posts.find(x => x.id === pid);
+  if (!p) return;
+  document.getElementById('detailCoordText').textContent = `${p.depth} // ${p.sonarRate}`;
+  document.getElementById('detailHeaderTitle').textContent = `${p.zone} · 卷宗详情`;
+  renderDetailContent();
+  document.getElementById('detailDrawer').classList.add('open');
+  document.getElementById('phoneRoot').classList.add('detail-open');
+}
+
+function closeDetail() {
+  document.getElementById('detailDrawer').classList.remove('open');
+  document.getElementById('phoneRoot').classList.remove('detail-open');
+  activePostId = null;
+}
+
+function renderDetailContent() {
+  const p = posts.find(x => x.id === activePostId);
+  if (!p) return;
+
+  const box = document.getElementById('detailScroll');
+  box.innerHTML = `
+    <article class="post-card" style="cursor:default;">
+      <div class="post-head">
+        <div class="islander-left">
+          <div class="sonar-avatar">${AVATAR_SVGS[p.ava]}</div>
+          <div class="islander-meta">
+            <div class="islander-id-line">
+              <span class="islander-id">${p.islander}</span>
+              <span class="hot-tide-tag">${p.hotBadge}</span>
+            </div>
+            <span class="sub-echo-info">${p.timeStr} · ${p.sonarRate}</span>
+          </div>
+        </div>
+        <div class="zone-stamp">
+          <span class="zone-stamp-name">${p.zone}</span>
+          <span class="zone-stamp-depth">${p.depth}</span>
+        </div>
+      </div>
+
+      <div class="post-title" style="font-size:14.2px; margin-bottom:8px;">${p.title}</div>
+      <div class="post-excerpt" style="font-size:12.2px; white-space:pre-wrap; line-height:1.78;">${p.content}</div>
+
+      <div class="action-grid-bar">
+        <button class="grid-act-btn ${p.liked ? 'liked' : ''}" onclick="togglePostLike('${p.id}')">
+          ${UI_ICONS.waveLike}<span>${p.likes}</span>
+        </button>
+        <button class="grid-act-btn">
+          ${UI_ICONS.echoComment}<span>${p.comments.length}</span>
+        </button>
+        <button class="grid-act-btn" onclick="openShareModal('${p.id}')">
+          ${UI_ICONS.bottleShare}<span>漂流瓶</span>
+        </button>
+        <button class="grid-act-btn" onclick="openReportModal('post', '${p.islander} 的主帖')">
+          ${UI_ICONS.patrolReport}<span>举报主帖</span>
+        </button>
+      </div>
+    </article>
+
+    <div class="echo-reef-box">
+      <div class="reef-head">
+        <strong>回声礁 · 岛民已匿名 (${p.comments.length})</strong>
+        <span>ECHO REEF // 声纹已隐匿</span>
+      </div>
+
+      ${p.comments.map((c, idx) => `
+        <div class="comment-item">
+          <div class="c-head">
+            <div class="c-user">
+              <div class="sonar-avatar c-ava-sm">${AVATAR_SVGS[c.ava]}</div>
+              <span class="c-name">${c.islander}</span>
+            </div>
+            <span class="c-floor">#0${idx + 1} 礁层</span>
+          </div>
+
+          <div class="c-body">${c.text}</div>
+
+          ${c.sub ? `
+            <div class="sub-reply-box">
+              <b>${c.sub.from}</b> <span class="ticket-tag" style="margin:0 3px;">楼主</span> 回复 <b>${c.sub.to}</b>：${c.sub.text}
+            </div>
+          ` : ''}
+
+          <div class="c-actions">
+            <span>${c.time} · 回声礁声呐</span>
+            <div class="c-btn-group">
+              <button class="c-mini-btn ${c.liked ? 'liked' : ''}" onclick="toggleCommentLike('${p.id}', '${c.id}')">
+                ${UI_ICONS.waveLike}<span>${c.likes}</span>
+              </button>
+              <button class="c-mini-btn" onclick="openReportModal('comment', '${c.islander} 的礁层评论')">
+                ${UI_ICONS.patrolReport}<span>举报评论</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function sendComment() {
+  const inp = document.getElementById('replyInput');
+  const val = inp.value.trim();
+  if (!val || !activePostId) return;
+  const p = posts.find(x => x.id === activePostId);
+  if (!p) return;
+  p.comments.push({
+    id: 'c_' + Date.now(),
+    islander: '岛民 #0209',
+    ava: 'starfish',
+    time: '刚刚登岛',
+    likes: 1,
+    liked: true,
+    text: val
+  });
+  inp.value = '';
+  renderDetailContent();
+  renderFeed();
+  showToast('✦ 已通过声纹混淆护盾，以「岛民 #0209」投递回声礁');
+}
+
+function openReportModal(mode, targetLabel) {
+  reportMode = mode;
+  reportTargetName = targetLabel;
+  reportCatIdx = 0;
+  reportOptIdx = 0;
+
+  const cfg = REPORT_DATA[reportMode];
+  document.getElementById('reportTypeBadge').textContent = cfg.badge;
+  document.getElementById('reportModalTitle').textContent = `举报目标：${targetLabel}`;
+
+  renderReportCategories();
+  renderReportOptions();
+  document.getElementById('reportModal').classList.add('show');
+}
+
+function renderReportCategories() {
+  const cfg = REPORT_DATA[reportMode];
+  document.getElementById('reportCatTabs').innerHTML = cfg.categories.map((cat, idx) => `
+    <button class="report-cat-btn ${idx === reportCatIdx ? 'active' : ''}" onclick="switchReportCat(${idx})">
+      ${cat.name}
+    </button>
+  `).join('');
+}
+
+function switchReportCat(idx) {
+  reportCatIdx = idx;
+  reportOptIdx = 0;
+  renderReportCategories();
+  renderReportOptions();
+}
+
+function renderReportOptions() {
+  const cfg = REPORT_DATA[reportMode];
+  const items = cfg.categories[reportCatIdx].items;
+  document.getElementById('reportOptionsList').innerHTML = items.map((txt, idx) => `
+    <div class="report-opt-item ${idx === reportOptIdx ? 'selected' : ''}" onclick="reportOptIdx=${idx};renderReportOptions()">
+      <div class="sq-check">${idx === reportOptIdx ? UI_ICONS.check : ''}</div>
+      <span>${txt}</span>
+    </div>
+  `).join('');
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').classList.remove('show');
+}
+
+function submitReportConfirm() {
+  const cfg = REPORT_DATA[reportMode];
+  const catName = cfg.categories[reportCatIdx].name;
+  const chosenTitle = cfg.categories[reportCatIdx].items[reportOptIdx].split('：')[0];
+  closeReportModal();
+  showToast(`✓ 海事巡逻艇已接单！已按 ${catName}「${chosenTitle}」对 ${reportTargetName} 发出声呐警告`);
+}
+
+function openShareModal(pid) {
+  const p = posts.find(x => x.id === pid);
+  if (!p) return;
+  document.getElementById('shareUrlBox').textContent = `https://darklight.island/sonar/${p.id}?depth=${encodeURIComponent(p.depth)}&mask=998`;
+  document.getElementById('shareModal').classList.add('show');
+}
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+function copyShareLink() {
+  const txt = document.getElementById('shareUrlBox').textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).catch(() => {});
+  }
+  closeShareModal();
+  showToast('✓ 已复制漂流瓶加密坐标链接！');
+}
+
+function openPaletteModal() {
+  document.getElementById('paletteModal').classList.add('show');
+}
+function closePaletteModal() {
+  document.getElementById('paletteModal').classList.remove('show');
+}
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace('#', '');
+  const num = parseInt(clean, 16);
+  if (isNaN(num)) return `rgba(74, 124, 226, ${alpha})`;
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+}
+function setCleanTheme(mainHex, softRgba) {
+  const root = document.documentElement;
+  root.style.setProperty('--theme-main', mainHex);
+  root.style.setProperty('--theme-soft', softRgba || hexToRgba(mainHex, 0.14));
+  root.style.setProperty('--theme-line', hexToRgba(mainHex, 0.24));
+  root.style.setProperty('--theme-glow', hexToRgba(mainHex, 0.15));
+  document.getElementById('colorPickerInput').value = mainHex;
+  document.getElementById('colorHexInput').value = mainHex;
+}
+function onPickColor(val) {
+  document.getElementById('colorHexInput').value = val;
+  setCleanTheme(val);
+}
+function onInputHex(val) {
+  if (/^#[0-9A-Fa-f]{6}$/.test(val.trim())) {
+    document.getElementById('colorPickerInput').value = val.trim();
+    setCleanTheme(val.trim());
+  }
+}
+
+document.getElementById('depthTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.depth-tab');
+  if (!tab) return;
+  document.querySelectorAll('.depth-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentZone = tab.dataset.zone;
+  renderFeed();
+});
+
+renderSonarBackground();
+renderFeed();
+</script>
+</body>
+</html>
