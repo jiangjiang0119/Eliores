@@ -586,13 +586,15 @@ body {
 }
 .detail-drawer.open { transform: translateX(0); }
 
-/* 详情页打开时，隐藏首页主体内容，只保留全局声呐背景 + 状态栏 */
+/* 详情页打开时，隐藏首页主体内容，只保留全局声呐背景 + 状态栏；保留布局以维持首页滚动位置 */
 .phone.detail-open > .island-header,
 .phone.detail-open > .ecology-telemetry,
 .phone.detail-open > .island-broadcast-card,
 .phone.detail-open > .depth-tabs-bar,
 .phone.detail-open > .feed-viewport {
-  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .detail-scroll {
