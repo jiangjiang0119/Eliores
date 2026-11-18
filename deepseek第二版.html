@@ -639,23 +639,20 @@ body {
   flex-shrink: 0;
   overflow: visible;
 }
-.reef-head .mask-back {
-  fill: color-mix(in srgb, var(--theme-main) 24%, white);
+.reef-head .mask-back,
+.reef-head .mask-front {
+  fill: none;
   stroke: currentColor;
   stroke-width: 0.65;
   stroke-linejoin: round;
-}
-.reef-head .mask-front {
-  fill: currentColor;
-  stroke: currentColor;
-  stroke-width: 0.55;
-  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 .reef-head .mask-feat {
   fill: none;
-  stroke: #FFFFFF;
+  stroke: currentColor;
   stroke-width: 0.65;
   stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .reef-head .cn {
   font-family: 'Noto Sans SC', sans-serif;
