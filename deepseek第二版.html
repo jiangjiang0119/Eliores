@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>暗光岛 · 潮汐终端（声呐坐标背景 + 前端完整合体版）</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@300;400;500;600&family=Jost:wght@300&display=swap');
 
 :root {
   /* 与 #A9C7FF 声呐底图呼应的清透声呐色盘（可在右上角调色切换） */
@@ -619,13 +619,48 @@ body {
   border-bottom: 1px solid rgba(139, 180, 255, 0.18);
 }
 .reef-head strong { font-size: 12px; color: var(--ink-primary); }
-.reef-head span {
-  font-size: 9.5px;
+.reef-head .reef-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.reef-head .en {
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 1.05px;
   color: var(--theme-main);
-  background: var(--theme-soft);
-  padding: 2px 7px;
-  border-radius: 6px;
-  font-weight: 600;
+}
+.reef-head .mid-sym {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+.reef-head .mask-back {
+  fill: var(--theme-soft);
+  stroke: var(--theme-main);
+  stroke-width: 0.65;
+  stroke-linejoin: round;
+}
+.reef-head .mask-front {
+  fill: var(--theme-main);
+  stroke: var(--theme-main);
+  stroke-width: 0.55;
+  stroke-linejoin: round;
+}
+.reef-head .mask-feat {
+  fill: none;
+  stroke: #FFFFFF;
+  stroke-width: 0.65;
+  stroke-linecap: round;
+}
+.reef-head .cn {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 9px;
+  font-weight: 300;
+  color: var(--ink-secondary);
 }
 
 .comment-item {
@@ -1572,8 +1607,23 @@ function renderDetailContent() {
 
     <div class="echo-reef-box">
       <div class="reef-head">
-        <strong>回声礁 · 岛民已匿名 (${p.comments.length})</strong>
-        <span>ECHO REEF // 声纹已隐匿</span>
+        <strong>全部回声礁（${p.comments.length}）</strong>
+        <span class="reef-right">
+          <span class="en">ECHO REEF</span>
+          <svg class="mid-sym" width="14.5" height="10.5" viewBox="1.2 2.2 15.2 10.8">
+            <g transform="translate(11.6, 6.8) rotate(14)">
+              <path class="mask-back" d="M-3.5 -3.7Q0 -4.7 3.5 -3.7C3.8 -0.4 2.5 3.3 0 4.3C-2.5 3.3 -3.8 -0.4 -3.5 -3.7Z"/>
+              <path class="mask-feat" d="M0.3 -1.1C0.9 -1.5 1.7 -1.5 2.2 -1.1"/>
+              <path class="mask-feat" d="M-0.2 1.8C0.5 1.3 1.4 1.3 1.9 1.7"/>
+            </g>
+            <g transform="translate(6.2, 8.0) rotate(-13)">
+              <path class="mask-front" d="M-3.7 -3.9Q0 -4.9 3.7 -3.9C4 -0.4 2.6 3.5 0 4.5C-2.6 3.5 -4 -0.4 -3.7 -3.9Z"/>
+              <path class="mask-feat" d="M-2.2 -1.1C-1.7 -1.6 -0.9 -1.6 -0.5 -1.1M0.5 -1.1C0.9 -1.6 1.7 -1.6 2.2 -1.1"/>
+              <path class="mask-feat" d="M-1.5 1.3C-0.7 2.2 0.7 2.2 1.5 1.3"/>
+            </g>
+          </svg>
+          <span class="cn">声纹已隐匿</span>
+        </span>
       </div>
 
       ${p.comments.map((c, idx) => `
